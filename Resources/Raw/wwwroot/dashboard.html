@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Rooms — Huddle</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #0a0a0f;
+            --surface: #13131a;
+            --card: #1a1a24;
+            --border: #252535;
+            --accent: #6c63ff;
+            --accent2: #a78bfa;
+            --text: #eeeef5;
+            --muted: #5c5c72;
+            --green: #34d399;
+            --red: #f87171;
+            --amber: #fbbf24;
+            --tab-h: 60px;
+        }
+
+        html {
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px));
+        }
+
+            body::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                z-index: 0;
+                background: radial-gradient(ellipse 80% 35% at 50% -5%, rgba(108,99,255,0.12), transparent);
+                pointer-events: none;
+            }
+
+        /* ── Error shield ── */
+        #error-shield {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: var(--bg);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+            gap: 1rem;
+        }
+
+            #error-shield.show {
+                display: flex;
+            }
+
+        .err-icon {
+            font-size: 2.5rem;
+        }
+
+        .err-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .err-msg {
+            font-size: 0.82rem;
+            color: var(--muted);
+            max-width: 280px;
+            line-height: 1.6;
+        }
+
+        .err-btn {
+            margin-top: 0.5rem;
+            padding: 0 1.5rem;
+            height: 48px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 0.75rem;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* ── Top bar ── */
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            padding-top: env(safe-area-inset-top, 0px);
+            background: rgba(10,10,15,0.88);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .topbar-inner {
+            display: flex;
+            align-items: center;
+            height: 56px;
+            padding: 0 1.25rem;
+            gap: 0.75rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            color: var(--text);
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .logo-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+        }
+
+        .topbar-right {
+            margin-left: auto;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(108,99,255,0.4), rgba(167,139,250,0.3));
+            border: 1px solid rgba(108,99,255,0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent2);
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+            .user-avatar:active {
+                opacity: 0.7;
+            }
+
+        /* ── Main ── */
+        .main {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            padding: 1.5rem 1.25rem;
+            max-width: 680px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .page-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+
+        .page-sub {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-top: 0.15rem;
+        }
+
+        .btn-create {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 0.65rem;
+            padding: 0 1rem;
+            height: 40px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.18s;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+            .btn-create:active:not(:disabled) {
+                transform: scale(0.96);
+                background: #5a52e0;
+            }
+
+            .btn-create:disabled {
+                opacity: 0.45;
+                cursor: not-allowed;
+            }
+
+        .btn-join-link {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: var(--surface);
+            color: var(--accent2);
+            border: 1px solid rgba(167,139,250,0.3);
+            border-radius: 0.65rem;
+            padding: 0 1rem;
+            height: 40px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.18s;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+            .btn-join-link:active {
+                transform: scale(0.96);
+                background: var(--card);
+                border-color: var(--accent2);
+            }
+
+        /* Join sheet paste input with clear button */
+        .input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+            .input-wrap input {
+                padding-right: 2.75rem;
+            }
+
+        .input-clear {
+            position: absolute;
+            right: 0.75rem;
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            display: none;
+            line-height: 1;
+        }
+
+            .input-clear.visible {
+                display: block;
+            }
+
+        /* ── Room cards ── */
+        .rooms-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .room-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1rem 1.1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            transition: border-color 0.2s;
+            animation: fadeUp 0.3s ease both;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .room-card:active {
+            border-color: rgba(108,99,255,0.4);
+        }
+
+        .room-card-top {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+        }
+
+        .room-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 11px;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, rgba(108,99,255,0.2), rgba(167,139,250,0.12));
+            border: 1px solid rgba(108,99,255,0.22);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .room-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .room-name {
+            font-size: 0.95rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .room-meta {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-top: 0.15rem;
+        }
+
+        .room-status {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: var(--green);
+            background: rgba(52,211,153,0.1);
+            border: 1px solid rgba(52,211,153,0.2);
+            padding: 0.2rem 0.55rem;
+            border-radius: 20px;
+            flex-shrink: 0;
+        }
+
+            .room-status::before {
+                content: '●';
+                font-size: 0.45rem;
+            }
+
+        .room-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-join {
+            flex: 1;
+            min-height: 44px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 0.6rem;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.18s;
+        }
+
+            .btn-join:active {
+                transform: scale(0.97);
+                background: #5a52e0;
+            }
+
+        .btn-icon {
+            min-width: 44px;
+            min-height: 44px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 0.6rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.18s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .btn-icon:active {
+                background: var(--card);
+            }
+
+            .btn-icon.del:active {
+                background: rgba(248,113,113,0.1);
+                border-color: rgba(248,113,113,0.3);
+            }
+
+        /* ── Empty + skeleton ── */
+        .rooms-empty {
+            text-align: center;
+            padding: 4rem 1rem;
+            color: var(--muted);
+        }
+
+            .rooms-empty .empty-icon {
+                font-size: 2.5rem;
+                display: block;
+                margin-bottom: 0.75rem;
+            }
+
+            .rooms-empty p {
+                font-size: 0.9rem;
+            }
+
+        .skeleton {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            height: 132px;
+            animation: pulse 1.4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%,100% {
+                opacity: .4
+            }
+
+            50% {
+                opacity: .8
+            }
+        }
+
+        /* ── Bottom tab bar ── */
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 20;
+            height: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px));
+            background: rgba(13,13,20,0.95);
+            backdrop-filter: blur(16px);
+            border-top: 1px solid var(--border);
+            display: flex;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        .tab-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--muted);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 500;
+            transition: color 0.2s;
+            min-height: var(--tab-h);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+            .tab-item.active {
+                color: var(--accent2);
+            }
+
+        .tab-icon {
+            font-size: 1.3rem;
+            line-height: 1;
+        }
+
+        /* ── Sheet ── */
+        .sheet-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            background: rgba(0,0,0,0.65);
+            backdrop-filter: blur(4px);
+            align-items: flex-end;
+        }
+
+            .sheet-overlay.open {
+                display: flex;
+            }
+
+        .sheet {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-bottom: none;
+            border-radius: 1.5rem 1.5rem 0 0;
+            padding: 0 1.5rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
+            width: 100%;
+            animation: sheetUp 0.25s cubic-bezier(0.22,1,0.36,1);
+        }
+
+        @keyframes sheetUp {
+            from {
+                transform: translateY(100%);
+            }
+
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .sheet-handle {
+            width: 36px;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            margin: 0.9rem auto 1.5rem;
+        }
+
+        .sheet-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+            letter-spacing: -0.02em;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            margin-bottom: 1rem;
+        }
+
+            .field label {
+                font-size: 0.72rem;
+                font-weight: 600;
+                color: var(--muted);
+                text-transform: uppercase;
+                letter-spacing: 0.07em;
+            }
+
+            .field input {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                color: var(--text);
+                font-family: 'DM Sans', sans-serif;
+                font-size: 16px;
+                padding: 0.85rem 1rem;
+                border-radius: 0.75rem;
+                outline: none;
+                transition: border-color 0.2s, box-shadow 0.2s;
+                width: 100%;
+                min-height: 48px;
+                -webkit-appearance: none;
+            }
+
+                .field input:focus {
+                    border-color: var(--accent);
+                    box-shadow: 0 0 0 3px rgba(108,99,255,0.18);
+                }
+
+                .field input::placeholder {
+                    color: var(--muted);
+                    opacity: 0.7;
+                }
+
+        .field-hint {
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+
+        .sheet-actions {
+            display: flex;
+            gap: 0.65rem;
+            margin-top: 1.25rem;
+        }
+
+        .btn-confirm {
+            flex: 1;
+            min-height: 52px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 0.75rem;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.18s;
+        }
+
+            .btn-confirm:active:not(:disabled) {
+                transform: scale(0.97);
+                background: #5a52e0;
+            }
+
+            .btn-confirm:disabled {
+                opacity: 0.45;
+                cursor: not-allowed;
+            }
+
+        .btn-cancel-sheet {
+            min-height: 52px;
+            padding: 0 1.25rem;
+            background: var(--surface);
+            color: var(--muted);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.18s;
+        }
+
+            .btn-cancel-sheet:active {
+                background: var(--card);
+                color: var(--text);
+            }
+
+        .sheet-msg {
+            display: none;
+            margin-top: 0.75rem;
+            padding: 0.7rem 0.9rem;
+            border-radius: 0.6rem;
+            font-size: 0.82rem;
+        }
+
+            .sheet-msg.error {
+                background: rgba(248,113,113,0.1);
+                color: var(--red);
+                border: 1px solid rgba(248,113,113,0.2);
+            }
+
+        /* ── Toast ── */
+        .toast {
+            position: fixed;
+            bottom: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px) + 0.75rem);
+            left: 50%;
+            transform: translateX(-50%) translateY(12px);
+            z-index: 100;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 0.65rem;
+            padding: 0.65rem 1.1rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            white-space: nowrap;
+            opacity: 0;
+            transition: all 0.22s ease;
+            pointer-events: none;
+        }
+
+            .toast.show {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+
+            .toast.success {
+                color: var(--green);
+                border-color: rgba(52,211,153,0.3);
+            }
+
+            .toast.error {
+                color: var(--red);
+                border-color: rgba(248,113,113,0.3);
+            }
+    </style>
+</head>
+<body>
+
+    <!-- Error shield -->
+    <div id="error-shield">
+        <div class="err-icon">😕</div>
+        <div class="err-title">Something went wrong</div>
+        <div class="err-msg" id="err-detail">An unexpected error occurred. Please try again.</div>
+        <button class="err-btn" onclick="window.location.reload()">Try Again</button>
+    </div>
+
+    <!-- Top bar -->
+    <div class="topbar">
+        <div class="topbar-inner">
+            <a class="logo" href="dashboard.html">
+                <div class="logo-icon">📹</div>
+                Huddle
+            </a>
+            <div class="topbar-right">
+                <div class="user-avatar" id="user-avatar" onclick="window.location.href='profile.html'" title="Profile">?</div>
+            </div>
+        </div>
+    </div>
+
+    <main class="main">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Your Rooms</h1>
+                <p class="page-sub">Tap a room to join a call</p>
+            </div>
+            <div style="display:flex;gap:0.5rem;flex-shrink:0;">
+                <button class="btn-join-link" id="open-join-btn">🔗 Join</button>
+                <button class="btn-create" id="open-create-btn">＋ New</button>
+            </div>
+        </div>
+        <div class="rooms-grid" id="rooms-grid">
+            <div class="skeleton"></div>
+            <div class="skeleton" style="animation-delay:.1s"></div>
+            <div class="skeleton" style="animation-delay:.2s"></div>
+        </div>
+    </main>
+
+    <!-- Bottom tab bar -->
+    <div class="tab-bar">
+        <button class="tab-item active" onclick="window.location.href='dashboard.html'">
+            <span class="tab-icon">🏠</span><span>Rooms</span>
+        </button>
+        <button class="tab-item" id="new-room-tab" onclick="openSheet()">
+            <span class="tab-icon">＋</span><span>New Room</span>
+        </button>
+        <button class="tab-item" id="join-room-tab" onclick="openJoinSheet()">
+            <span class="tab-icon">🔗</span><span>Join</span>
+        </button>
+        <button class="tab-item" onclick="window.location.href='profile.html'">
+            <span class="tab-icon">👤</span><span>Profile</span>
+        </button>
+    </div>
+
+    <!-- Create Room Sheet -->
+    <div class="sheet-overlay" id="create-sheet">
+        <div class="sheet">
+            <div class="sheet-handle"></div>
+            <div class="sheet-title">Create a new room</div>
+            <div class="field">
+                <label>Room Name</label>
+                <input id="room-name-input" type="text" placeholder="e.g. Team Standup"
+                       maxlength="40" enterkeyhint="done" autocomplete="off" />
+                <span class="field-hint">Only letters, numbers and hyphens in the room URL.</span>
+            </div>
+            <div class="sheet-msg error" id="sheet-msg"></div>
+            <div class="sheet-actions">
+                <button class="btn-cancel-sheet" id="cancel-create-btn">Cancel</button>
+                <button class="btn-confirm" id="confirm-create-btn">Create Room</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Join by Link Sheet -->
+    <div class="sheet-overlay" id="join-sheet">
+        <div class="sheet">
+            <div class="sheet-handle"></div>
+            <div class="sheet-title">Join a room</div>
+            <div class="field">
+                <label>Room Link or URL</label>
+                <div class="input-wrap">
+                    <input id="join-url-input" type="url" inputmode="url"
+                           placeholder="https://yourdomain.daily.co/room-name"
+                           autocomplete="off" autocorrect="off" autocapitalize="off"
+                           spellcheck="false" enterkeyhint="go" />
+                    <button class="input-clear" id="join-url-clear" tabindex="-1">✕</button>
+                </div>
+                <span class="field-hint">Paste a Daily.co room link shared by another user.</span>
+            </div>
+            <div class="field">
+                <label>Room Name <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+                <input id="join-name-input" type="text"
+                       placeholder="e.g. Team Standup"
+                       maxlength="40" autocomplete="off" enterkeyhint="go" />
+            </div>
+            <div class="sheet-msg error" id="join-sheet-msg"></div>
+            <div class="sheet-actions">
+                <button class="btn-cancel-sheet" id="cancel-join-btn">Cancel</button>
+                <button class="btn-confirm" id="confirm-join-btn">Join Call</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <!-- ── Error shield (plain, runs first) ── -->
+    <script>
+        (function () {
+            function showError(msg) {
+                var s = document.getElementById('error-shield');
+                var d = document.getElementById('err-detail');
+                if (d && msg) d.textContent = msg;
+                if (s) s.classList.add('show');
+            }
+            window.onerror = function (msg, src) {
+                if (src && (src.indexOf('fonts.googleapis') !== -1 || src.indexOf('jsdelivr') !== -1)) return false;
+                showError('An unexpected error occurred. Please try again.');
+                return true;
+            };
+            window.addEventListener('unhandledrejection', function (e) {
+                var msg = e && e.reason && e.reason.message ? e.reason.message : '';
+                if (msg.indexOf('401') !== -1 || msg.toLowerCase().indexOf('unauthorized') !== -1 ||
+                    msg.toLowerCase().indexOf('missing scope') !== -1) return;
+                if (msg.toLowerCase().indexOf('network') !== -1 || msg.toLowerCase().indexOf('fetch') !== -1) {
+                    showError('No internet connection. Please check your network and try again.');
+                }
+            });
+            window.openSheet = function () {
+                var nameInput = document.getElementById('room-name-input');
+                var sheetMsg = document.getElementById('sheet-msg');
+                if (nameInput) nameInput.value = '';
+                if (sheetMsg) sheetMsg.style.display = 'none';
+                document.getElementById('create-sheet').classList.add('open');
+                setTimeout(function () { if (nameInput) nameInput.focus(); }, 150);
+            };
+
+            window.openJoinSheet = function () {
+                var urlInput = document.getElementById('join-url-input');
+                var nameInput = document.getElementById('join-name-input');
+                var msg = document.getElementById('join-sheet-msg');
+                var clearBtn = document.getElementById('join-url-clear');
+                if (urlInput) urlInput.value = '';
+                if (nameInput) nameInput.value = '';
+                if (msg) msg.style.display = 'none';
+                if (clearBtn) clearBtn.classList.remove('visible');
+                document.getElementById('join-sheet').classList.add('open');
+                // Try reading clipboard automatically — convenient on mobile
+                setTimeout(function () {
+                    if (urlInput) {
+                        urlInput.focus();
+                        if (navigator.clipboard && navigator.clipboard.readText) {
+                            navigator.clipboard.readText().then(function (text) {
+                                if (text && (text.includes('daily.co') || text.startsWith('https://'))) {
+                                    urlInput.value = text.trim();
+                                    if (clearBtn) clearBtn.classList.add('visible');
+                                }
+                            }).catch(function () { });
+                        }
+                    }
+                }, 150);
+            };
+            window.handleAndroidBack = function () {
+                var joinSheet = document.getElementById('join-sheet');
+                if (joinSheet && joinSheet.classList.contains('open')) {
+                    joinSheet.classList.remove('open'); return;
+                }
+                var sheet = document.getElementById('create-sheet');
+                if (sheet && sheet.classList.contains('open')) {
+                    sheet.classList.remove('open'); return;
+                }
+                if (typeof window.HybridWebView !== 'undefined') {
+                    window.HybridWebView.InvokeDotNet('CloseApplication');
+                }
+            };
+        })();
+
+        // Append this to the bottom script block inside dashboard.html
+
+        window.handlePageBack = function () {
+            // Find sheet overlays that are currently open.
+            // NOTE: the open class is on .sheet-overlay, not .sheet itself.
+            var openSheets = document.querySelectorAll('.sheet-overlay.open');
+
+            if (openSheets.length > 0) {
+                // Close every open sheet overlay
+                openSheets.forEach(function (el) { el.classList.remove('open'); });
+
+                // Return 'sheet_closed' — C# stops back navigation entirely
+                return 'sheet_closed';
+            }
+
+            // No sheets open — this is the root/home page.
+            // Return 'at_home' so C# skips canGoBack() and goes straight
+            // to the double-tap-to-exit logic.
+            return 'at_home';
+        };
+    </script>
+
+    <!-- ── Main app logic (module, isolated) ── -->
+    <script type="module">
+        (async function () {
+            try {
+                var mod = await import('./Scripts/config.js');
+                var APPWRITE = mod.APPWRITE, DAILY = mod.DAILY;
+                var sdk = await import('https://cdn.jsdelivr.net/npm/appwrite@16/dist/esm/sdk.js');
+                var { Client, Account, Databases, ID, Query } = sdk;
+
+                var client = new Client().setEndpoint(APPWRITE.endpoint).setProject(APPWRITE.projectId);
+                var account = new Account(client);
+                var databases = new Databases(client);
+
+                var currentUser;
+                try {
+                    currentUser = await account.get();
+                    var initials = (currentUser.name || currentUser.email || '?')
+                        .split(' ').map(function (p) { return p[0]; }).join('').slice(0, 2).toUpperCase();
+                    document.getElementById('user-avatar').textContent = initials;
+                } catch (_) {
+                    window.location.href = 'auth.html'; return;
+                }
+
+                // ── Load rooms ──
+                async function loadRooms() {
+                    var grid = document.getElementById('rooms-grid');
+                    try {
+                        var res = await databases.listDocuments(
+                            APPWRITE.databaseId, APPWRITE.collectionId,
+                            [Query.equal('createdBy', currentUser.$id), Query.orderDesc('$createdAt')]
+                        );
+                        if (!res.documents.length) {
+                            grid.innerHTML = '<div class="rooms-empty"><span class="empty-icon">🎙️</span><p>No rooms yet — tap <strong>New Room</strong> to get started</p></div>';
+                            return;
+                        }
+                        grid.innerHTML = res.documents.map(function (room, i) {
+                            return '<div class="room-card" style="animation-delay:' + (i * 0.06) + 's">' +
+                                '<div class="room-card-top">' +
+                                '<div class="room-icon">📹</div>' +
+                                '<div class="room-info">' +
+                                '<div class="room-name">' + esc(room.name) + '</div>' +
+                                '<div class="room-meta">' + timeAgo(room.$createdAt) + '</div>' +
+                                '</div>' +
+                                '<span class="room-status">Live</span>' +
+                                '</div>' +
+                                '<div class="room-actions">' +
+                                '<button class="btn-join" data-url="' + esc(room.dailyUrl) + '" data-name="' + esc(room.name) + '">Join Call</button>' +
+                                '<button class="btn-icon" data-url="' + esc(room.dailyUrl) + '" title="Copy link">🔗</button>' +
+                                '<button class="btn-icon del" data-id="' + room.$id + '" data-daily="' + esc(room.dailyRoomName) + '" title="Delete">🗑</button>' +
+                                '</div>' +
+                                '</div>';
+                        }).join('');
+
+                        grid.querySelectorAll('.btn-join').forEach(function (btn) {
+                            btn.addEventListener('click', function () {
+                                window.location.href = 'call.html?url=' + encodeURIComponent(btn.dataset.url) + '&name=' + encodeURIComponent(btn.dataset.name);
+                            });
+                        });
+                        grid.querySelectorAll('.btn-icon:not(.del)').forEach(function (btn) {
+                            btn.addEventListener('click', function () {
+                                navigator.clipboard.writeText(btn.dataset.url).catch(function () { });
+                                showToast('✓ Room link copied', true);
+                            });
+                        });
+                        grid.querySelectorAll('.btn-icon.del').forEach(function (btn) {
+                            btn.addEventListener('click', function () {
+                                if (btn.classList.contains('confirming')) {
+                                    deleteRoom(btn.dataset.id, btn.dataset.daily);
+                                } else {
+                                    grid.querySelectorAll('.btn-icon.del.confirming').forEach(function (o) {
+                                        o.classList.remove('confirming'); o.innerHTML = '🗑';
+                                        o.style.background = ''; o.style.borderColor = '';
+                                    });
+                                    btn.classList.add('confirming');
+                                    btn.innerHTML = '⚠️';
+                                    btn.style.background = 'rgba(248,113,113,0.2)';
+                                    btn.style.borderColor = 'var(--red)';
+                                    setTimeout(function () {
+                                        if (btn.classList.contains('confirming')) {
+                                            btn.classList.remove('confirming'); btn.innerHTML = '🗑';
+                                            btn.style.background = ''; btn.style.borderColor = '';
+                                        }
+                                    }, 3000);
+                                }
+                            });
+                        });
+                    } catch (e) {
+                        grid.innerHTML = '<div class="rooms-empty"><span class="empty-icon">⚠️</span><p>Couldn\'t load rooms. Pull down to retry.</p></div>';
+                    }
+                }
+
+                // ── Sheet ──
+                var sheet = document.getElementById('create-sheet');
+                var sheetMsg = document.getElementById('sheet-msg');
+                var confirmBtn = document.getElementById('confirm-create-btn');
+                var nameInput = document.getElementById('room-name-input');
+
+                document.getElementById('open-create-btn').addEventListener('click', window.openSheet);
+                document.getElementById('cancel-create-btn').addEventListener('click', function () { sheet.classList.remove('open'); });
+                sheet.addEventListener('click', function (e) { if (e.target === sheet) sheet.classList.remove('open'); });
+                confirmBtn.addEventListener('click', createRoom);
+                nameInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') createRoom(); });
+
+                async function createRoom() {
+                    var name = nameInput.value.trim();
+                    if (!name) { showSheetError('Please enter a room name.'); return; }
+                    confirmBtn.disabled = true; confirmBtn.textContent = 'Creating…';
+                    sheetMsg.style.display = 'none';
+                    try {
+                        var dailyRes = await fetch('https://api.daily.co/v1/rooms', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + DAILY.apiKey },
+                            body: JSON.stringify({ name: name, privacy: 'private', properties: { exp: Math.floor(Date.now() / 1000) + 86400 * 7 } }),
+                        });
+                        if (!dailyRes.ok) { var err = await dailyRes.json(); throw new Error(err.error || 'Room creation failed'); }
+                        var dailyRoom = await dailyRes.json();
+                        await databases.createDocument(APPWRITE.databaseId, APPWRITE.collectionId, ID.unique(),
+                            { name: name, dailyRoomName: dailyRoom.name, dailyUrl: dailyRoom.url, createdBy: currentUser.$id });
+                        sheet.classList.remove('open');
+                        showToast('✓ Room "' + name + '" created', true);
+                        loadRooms();
+                    } catch (e) {
+                        showSheetError('⚠ ' + e.message);
+                    } finally {
+                        confirmBtn.disabled = false; confirmBtn.textContent = 'Create Room';
+                    }
+                }
+
+                async function deleteRoom(docId, dailyRoomName) {
+                    try {
+                        await fetch('https://api.daily.co/v1/rooms/' + dailyRoomName, {
+                            method: 'DELETE', headers: { 'Authorization': 'Bearer ' + DAILY.apiKey },
+                        });
+                        await databases.deleteDocument(APPWRITE.databaseId, APPWRITE.collectionId, docId);
+                        showToast('✓ Room deleted', true);
+                        loadRooms();
+                    } catch (e) { showToast('⚠ ' + e.message, false); }
+                }
+
+                // ── Helpers ──
+                var toastTimer;
+                function showToast(msg, success) {
+                    clearTimeout(toastTimer);
+                    var t = document.getElementById('toast');
+                    t.textContent = msg;
+                    t.className = 'toast ' + (success ? 'success' : 'error') + ' show';
+                    toastTimer = setTimeout(function () { t.classList.remove('show'); }, 3000);
+                }
+                function showSheetError(msg) { sheetMsg.textContent = msg; sheetMsg.style.display = 'block'; }
+                function timeAgo(dateStr) {
+                    var diff = Date.now() - new Date(dateStr).getTime();
+                    var m = Math.floor(diff / 60000);
+                    if (m < 1) return 'just now'; if (m < 60) return m + 'm ago';
+                    var h = Math.floor(m / 60);
+                    if (h < 24) return h + 'h ago';
+                    return Math.floor(h / 24) + 'd ago';
+                }
+                function esc(s) {
+                    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                }
+
+                loadRooms();
+
+                // ── Join sheet wiring ──────────────────────────────────────
+                var joinSheet = document.getElementById('join-sheet');
+                var joinMsg = document.getElementById('join-sheet-msg');
+                var joinUrlInput = document.getElementById('join-url-input');
+                var joinNameInput = document.getElementById('join-name-input');
+                var joinConfirm = document.getElementById('confirm-join-btn');
+                var joinClear = document.getElementById('join-url-clear');
+
+                document.getElementById('open-join-btn').addEventListener('click', window.openJoinSheet);
+                document.getElementById('cancel-join-btn').addEventListener('click', function () { joinSheet.classList.remove('open'); });
+                joinSheet.addEventListener('click', function (e) { if (e.target === joinSheet) joinSheet.classList.remove('open'); });
+
+                // Show/hide the clear button as user types
+                joinUrlInput.addEventListener('input', function () {
+                    joinClear.classList.toggle('visible', joinUrlInput.value.length > 0);
+                    joinMsg.style.display = 'none';
+                });
+                joinClear.addEventListener('click', function () {
+                    joinUrlInput.value = '';
+                    joinClear.classList.remove('visible');
+                    joinUrlInput.focus();
+                });
+
+                // Enter key on either field triggers join
+                joinUrlInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') joinRoom(); });
+                joinNameInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') joinRoom(); });
+                joinConfirm.addEventListener('click', joinRoom);
+
+                function joinRoom() {
+                    var raw = joinUrlInput.value.trim();
+                    var name = joinNameInput.value.trim();
+
+                    if (!raw) {
+                        joinMsg.textContent = 'Please paste a room link.';
+                        joinMsg.style.display = 'block';
+                        joinUrlInput.focus();
+                        return;
+                    }
+
+                    // Accept either a full URL or just a room name slug
+                    var url;
+                    if (raw.startsWith('http://') || raw.startsWith('https://')) {
+                        url = raw;
+                    } else {
+                        // Treat bare input as a room name — build Daily URL from config
+                        url = 'https://' + DAILY.domain + '/' + raw;
+                    }
+
+                    // Basic URL validation
+                    try { new URL(url); } catch (_) {
+                        joinMsg.textContent = 'That does not look like a valid link. Please check and try again.';
+                        joinMsg.style.display = 'block';
+                        return;
+                    }
+
+                    // Derive a display name from URL if not provided
+                    if (!name) {
+                        name = url.split('?')[0].split('/').filter(Boolean).pop() || 'Call';
+                    }
+
+                    joinSheet.classList.remove('open');
+                    window.location.href = 'call.html?url=' + encodeURIComponent(url) + '&name=' + encodeURIComponent(name);
+                }
+
+            } catch (e) {
+                var shield = document.getElementById('error-shield');
+                var detail = document.getElementById('err-detail');
+                if (detail) detail.textContent = 'Could not connect to the server. Please check your connection and try again.';
+                if (shield) shield.classList.add('show');
+            }
+        })();
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>About — Huddle</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/> 
+  
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0a0a0f;
+      --surface: #13131a;
+      --card:    #1a1a24;
+      --border:  #252535;
+      --accent:  #6c63ff;
+      --accent2: #a78bfa;
+      --text:    #eeeef5;
+      --muted:   #5c5c72;
+    }
+
+    html { touch-action: manipulation; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg); 
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex; 
+      flex-direction: column;
+      padding: env(safe-area-inset-top, 1rem) 1.25rem env(safe-area-inset-bottom, 1rem) 1.25rem;
+    }
+
+    /* Header Nav */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 0;
+      margin-bottom: 1.5rem;
+    }
+
+    .btn-back {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-back:active {
+      transform: scale(0.95);
+      background: var(--border);
+    }
+
+    .header h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    /* Scrollable Container */
+    .content-scroll {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.75rem;
+      padding-bottom: 2rem;
+    }
+
+    /* Card Layouts */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Ambient Tech Stack Accent Blur */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: -50px; right: -50px;
+      width: 120px; height: 120px;
+      background: radial-gradient(circle, rgba(108,99,255,0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .app-meta {
+      text-align: center;
+      padding: 1rem 0;
+    }
+
+    .app-version {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: rgba(108, 99, 255, 0.15);
+      color: var(--accent2);
+      padding: 0.25rem 0.75rem;
+      border-radius: 2rem;
+      margin-top: 0.5rem;
+    }
+
+    .card h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      color: var(--accent2);
+    }
+
+    .card p {
+      font-size: 0.9rem;
+      color: #cdd;
+      line-height: 1.5;
+      margin-bottom: 1rem;
+    }
+    
+    .card p:last-child { margin-bottom: 0; }
+
+    /* Tech Badges */
+    .tech-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .badge {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.8rem;
+      border-radius: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    /* Creator Spotlight Styling */
+    .creator-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .creator-avatar {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: bold;
+      color: #000;
+      margin-bottom: 1rem;
+      box-shadow: 0 0 20px rgba(108, 99, 255, 0.2);
+    }
+
+    .btn-portfolio {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      background: linear-gradient(135deg, var(--accent), #5b52e6);
+      color: white;
+      border: none;
+      padding: 0.85rem;
+      border-radius: 0.75rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 0.5rem;
+      box-shadow: 0 4px 12px rgba(108, 99, 255, 0.2);
+    }
+
+    .btn-portfolio:active {
+      transform: scale(0.98);
+      filter: brightness(0.9);
+    }
+
+      .service-banner {
+          display: none;
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          z-index: 200;
+          padding: 0.65rem 1.1rem;
+          padding-top: calc(0.65rem + env(safe-area-inset-top, 0px));
+          background: rgba(251,191,36,0.12);
+          border-bottom: 1px solid rgba(251,191,36,0.3);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 0.8rem;
+          color: #fbbf24;
+          text-align: center;
+          line-height: 1.4;
+      }
+
+          .service-banner.error {
+              background: rgba(248,113,113,0.1);
+              border-color: rgba(248,113,113,0.3);
+              color: #f87171;
+          }
+
+          .service-banner.show {
+              display: block;
+          }
+  </style>
+</head>
+<body>
+    <div class="service-banner" id="service-banner"></div>
+
+    <div class="header">
+        <button class="btn-back" onclick="goBack()">←</button>
+        <h1>About Huddle</h1>
+    </div>
+
+    <div class="content-scroll">
+
+        <div class="app-meta">
+            <div style="font-size: 3rem; margin-bottom: 0.25rem;">💬</div>
+            <h2 style="color: var(--text); font-size: 1.5rem;">Huddle</h2>
+            <span class="app-version">Version 1.0</span>
+        </div>
+
+        <div class="card">
+            <h2>The Project</h2>
+            <p>Huddle is a high-performance, lightweight hybrid video calling application designed to eliminate meeting friction. Room initialization, credentials verification, and active state persistence occur dynamically across native layouts.</p>
+
+            <div class="tech-group">
+                <span class="badge">.NET MAUI</span>
+                <span class="badge">Daily.co API</span>
+                <span class="badge">Appwrite BaaS</span>
+                <span class="badge">JavaScript (ES6)</span>
+            </div>
+        </div>
+
+        <div class="card creator-section">
+            <div class="creator-avatar">👨‍💻</div>
+            <h2>The Creator</h2>
+            <p>Hey there! I'm a developer focusing on systems architecture and modern frontend delivery frameworks, specializing in building seamless hybrid solutions that interface directly with native hardware device loops.</p>
+
+            <a href="https://taylor-profile.netlify.app" target="_blank" class="btn-portfolio">
+                View Digital Portfolio ↗
+            </a>
+        </div>
+
+    </div>
+
+    <script>
+        function goBack() {
+            window.location.href = 'profile.html';
+        }
+
+        // Native Back Handler Integration
+        // This tells your MAUI app code-behind to treat this subpage gracefully
+        // and route backward instead of closing down the application environment completely.
+        window.handleAndroidBack = function () {
+            goBack();
+        };
+    </script>
+</body>
+</html>

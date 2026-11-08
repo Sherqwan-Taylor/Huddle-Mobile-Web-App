@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>Sign In — Huddle</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0f; --surface: #13131a; --card: #1a1a24; --border: #252535;
+      --accent: #6c63ff; --accent2: #a78bfa; --text: #eeeef5; --muted: #5c5c72;
+      --green: #34d399; --red: #f87171;
+    }
+    html { height: 100%; touch-action: manipulation; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100dvh; display: flex; flex-direction: column;
+      padding: env(safe-area-inset-top,0) env(safe-area-inset-right,0)
+               env(safe-area-inset-bottom,0) env(safe-area-inset-left,0);
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: 0;
+      background: radial-gradient(ellipse 70% 40% at 50% -5%, rgba(108,99,255,0.18), transparent),
+                  radial-gradient(ellipse 40% 30% at 80% 110%, rgba(167,139,250,0.08), transparent);
+      pointer-events: none;
+    }
+
+    /* ── Error shield ── */
+    #error-shield {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: var(--bg); flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 2rem; gap: 1rem;
+    }
+    #error-shield.show { display: flex; }
+    .err-icon  { font-size: 2.5rem; }
+    .err-title { font-size: 1.1rem; font-weight: 700; }
+    .err-msg   { font-size: 0.82rem; color: var(--muted); max-width: 280px; line-height: 1.6; }
+    .err-btn {
+      margin-top: 0.5rem; padding: 0 1.5rem; height: 48px;
+      background: var(--accent); color: #fff; border: none;
+      border-radius: 0.75rem; font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem; font-weight: 600; cursor: pointer;
+    }
+
+    /* ── Loading overlay (auth check) ── */
+    #loading-overlay {
+      position: fixed; inset: 0; z-index: 50;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .spinner {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 2.5px solid var(--border); border-top-color: var(--accent);
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .scroll-wrap {
+      position: relative; z-index: 1; flex: 1;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      padding: 1.5rem 1.25rem;
+      padding-bottom: max(1.5rem, env(safe-area-inset-bottom,0px));
+    }
+    .hero {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 3rem 0 2rem; text-align: center;
+      animation: fadeIn 0.4s ease both;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .logo-mark {
+      width: 64px; height: 64px; border-radius: 18px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; margin-bottom: 1rem;
+      box-shadow: 0 0 40px rgba(108,99,255,0.3);
+    }
+    .hero-name    { font-size: 1.8rem; font-weight: 700; letter-spacing: -0.03em; }
+    .hero-tagline { font-size: 0.9rem; color: var(--muted); margin-top: 0.4rem; }
+
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 1.5rem; padding: 1.75rem 1.5rem;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+      animation: slideUp 0.35s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .tabs {
+      display: grid; grid-template-columns: 1fr 1fr;
+      background: var(--surface); border-radius: 0.75rem;
+      padding: 4px; margin-bottom: 1.75rem;
+    }
+    .tab {
+      background: none; border: none; color: var(--muted);
+      font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 500;
+      padding: 0.65rem; border-radius: 0.55rem;
+      cursor: pointer; transition: all 0.2s; min-height: 44px;
+    }
+    .tab.active { background: var(--card); color: var(--text); box-shadow: 0 1px 6px rgba(0,0,0,0.35); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .field { display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 1rem; }
+    .field label {
+      font-size: 0.72rem; font-weight: 600; color: var(--muted);
+      letter-spacing: 0.07em; text-transform: uppercase;
+    }
+    .field input {
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); font-family: 'DM Sans', sans-serif;
+      font-size: 16px; padding: 0.85rem 1rem; border-radius: 0.75rem;
+      outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%; min-height: 48px; -webkit-appearance: none;
+    }
+    .field input:focus {
+      border-color: var(--accent); box-shadow: 0 0 0 3px rgba(108,99,255,0.18);
+    }
+    .field input::placeholder { color: var(--muted); opacity: 0.7; }
+
+    .btn {
+      width: 100%; min-height: 52px; padding: 0 1rem; border: none;
+      border-radius: 0.75rem; font-family: 'DM Sans', sans-serif;
+      font-size: 1rem; font-weight: 600; cursor: pointer;
+      transition: all 0.18s; margin-top: 0.5rem; letter-spacing: -0.01em;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:active:not(:disabled) { transform: scale(0.98); background: #5a52e0; }
+    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .msg {
+      display: none; margin-top: 0.9rem; padding: 0.8rem 1rem;
+      border-radius: 0.6rem; font-size: 0.85rem; line-height: 1.5;
+    }
+    .msg.success { background: rgba(52,211,153,0.1); color: var(--green); border: 1px solid rgba(52,211,153,0.25); }
+    .msg.error   { background: rgba(248,113,113,0.1); color: var(--red);   border: 1px solid rgba(248,113,113,0.25); }
+  </style>
+</head>
+<body>
+
+<!-- Error shield -->
+<div id="error-shield">
+  <div class="err-icon">😕</div>
+  <div class="err-title">Something went wrong</div>
+  <div class="err-msg" id="err-detail">An unexpected error occurred. Please try again.</div>
+  <button class="err-btn" onclick="window.location.reload()">Try Again</button>
+</div>
+
+<!-- Auth check loading overlay -->
+<div id="loading-overlay"><div class="spinner"></div></div>
+
+<div class="scroll-wrap">
+  <div class="hero">
+    <div class="logo-mark">📹</div>
+    <div class="hero-name">Huddle</div>
+    <div class="hero-tagline">Video calls, without the friction</div>
+  </div>
+  <div class="card">
+    <div class="tabs">
+      <button class="tab active" id="tab-login"  onclick="switchTab('login')">Sign In</button>
+      <button class="tab"        id="tab-signup" onclick="switchTab('signup')">Sign Up</button>
+    </div>
+    <!-- Login -->
+    <div class="tab-panel active" id="panel-login">
+      <div class="field">
+        <label>Email</label>
+        <input id="login-email" type="email" placeholder="you@example.com"
+               autocomplete="email" inputmode="email" enterkeyhint="next"/>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input id="login-password" type="password" placeholder="Your password"
+               autocomplete="current-password" enterkeyhint="go"/>
+      </div>
+      <button class="btn btn-primary" id="login-btn">Sign In →</button>
+      <div class="msg" id="login-msg"></div>
+    </div>
+    <!-- Signup -->
+    <div class="tab-panel" id="panel-signup">
+      <div class="field">
+        <label>Full Name</label>
+        <input id="signup-name" type="text" placeholder="Jane Smith"
+               autocomplete="name" enterkeyhint="next"/>
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input id="signup-email" type="email" placeholder="you@example.com"
+               autocomplete="email" inputmode="email" enterkeyhint="next"/>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input id="signup-password" type="password" placeholder="Min 8 characters"
+               autocomplete="new-password" enterkeyhint="go"/>
+      </div>
+      <button class="btn btn-primary" id="signup-btn">Create Account →</button>
+      <div class="msg" id="signup-msg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Error shield script (runs first, plain) ── -->
+<script>
+(function() {
+  function showError(msg) {
+    var s = document.getElementById('error-shield');
+    var d = document.getElementById('err-detail');
+    if (d && msg) d.textContent = msg;
+    if (s) s.classList.add('show');
+    var o = document.getElementById('loading-overlay');
+    if (o) o.style.display = 'none';
+  }
+  window.onerror = function(msg, src) {
+    if (src && src.indexOf('fonts.googleapis') !== -1) return false;
+    if (src && src.indexOf('jsdelivr') !== -1) return false;
+    showError('An unexpected error occurred. Please try again.');
+    return true;
+  };
+  window.addEventListener('unhandledrejection', function(e) {
+    var msg = e && e.reason && e.reason.message ? e.reason.message : '';
+    if (msg.indexOf('401') !== -1 || msg.toLowerCase().indexOf('unauthorized') !== -1 ||
+        msg.toLowerCase().indexOf('missing scope') !== -1) return;
+    if (msg.toLowerCase().indexOf('network') !== -1 || msg.toLowerCase().indexOf('fetch') !== -1) {
+      showError('No internet connection. Please check your network and try again.');
+    }
+  });
+  // Tab switching exposed globally for onclick attributes
+  window.switchTab = function(tab) {
+    document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+    document.getElementById('tab-'+tab).classList.add('active');
+    document.getElementById('panel-'+tab).classList.add('active');
+  };
+  // Android back
+  window.handleAndroidBack = function() {
+    if (typeof window.HybridWebView !== 'undefined') {
+      window.HybridWebView.InvokeDotNet('CloseApplication');
+    }
+  };
+})();
+</script>
+
+<!-- ── Auth + form logic (module, isolated) ── -->
+<script type="module">
+(async function() {
+  var overlay = document.getElementById('loading-overlay');
+
+  try {
+    var mod      = await import('./Scripts/config.js');
+    var APPWRITE = mod.APPWRITE;
+    var sdk      = await import('https://cdn.jsdelivr.net/npm/appwrite@16/dist/esm/sdk.js');
+    var Client   = sdk.Client, Account = sdk.Account, ID = sdk.ID;
+
+    var client  = new Client().setEndpoint(APPWRITE.endpoint).setProject(APPWRITE.projectId);
+    var account = new Account(client);
+
+    // Auth check — redirect if already logged in
+    try {
+      await account.get();
+      window.location.href = 'dashboard.html';
+      return;
+    } catch(_) {}
+
+    // Hide loading overlay, show page
+    overlay.style.display = 'none';
+
+    // Pre-select tab from index.html
+    try {
+      var savedMode = sessionStorage.getItem('huddle_auth_mode');
+      if (savedMode === 'signup') {
+        sessionStorage.removeItem('huddle_auth_mode');
+        window.switchTab('signup');
+      }
+    } catch(_) {}
+
+    // ── Login ──
+    function login() {
+      var email    = document.getElementById('login-email').value.trim();
+      var password = document.getElementById('login-password').value;
+      var btn      = document.getElementById('login-btn');
+      var msg      = document.getElementById('login-msg');
+      if (!email || !password) { showMsg(msg, 'Please fill in all fields.', false); return; }
+      btn.disabled = true; btn.textContent = 'Signing in…';
+      account.createEmailPasswordSession(email, password).then(function() {
+        showMsg(msg, '✓ Signed in! Redirecting…', true);
+        setTimeout(function() { window.location.href = 'dashboard.html'; }, 800);
+      }).catch(function(e) {
+        showMsg(msg, friendlyError(e), false);
+        btn.disabled = false; btn.textContent = 'Sign In →';
+      });
+    }
+
+    // ── Signup ──
+    function signup() {
+      var name     = document.getElementById('signup-name').value.trim();
+      var email    = document.getElementById('signup-email').value.trim();
+      var password = document.getElementById('signup-password').value;
+      var btn      = document.getElementById('signup-btn');
+      var msg      = document.getElementById('signup-msg');
+      if (!name || !email || !password) { showMsg(msg, 'Please fill in all fields.', false); return; }
+      if (password.length < 8)          { showMsg(msg, 'Password must be at least 8 characters.', false); return; }
+      btn.disabled = true; btn.textContent = 'Creating account…';
+      account.create(ID.unique(), email, password, name).then(function() {
+        return account.createEmailPasswordSession(email, password);
+      }).then(function() {
+        showMsg(document.getElementById('signup-msg'), '✓ Account created! Redirecting…', true);
+        setTimeout(function() { window.location.href = 'dashboard.html'; }, 800);
+      }).catch(function(e) {
+        showMsg(msg, friendlyError(e), false);
+        btn.disabled = false; btn.textContent = 'Create Account →';
+      });
+    }
+
+    document.getElementById('login-btn').addEventListener('click', login);
+    document.getElementById('login-password').addEventListener('keydown', function(e) { if (e.key==='Enter') login(); });
+    document.getElementById('signup-btn').addEventListener('click', signup);
+    document.getElementById('signup-password').addEventListener('keydown', function(e) { if (e.key==='Enter') signup(); });
+
+    function showMsg(el, text, success) {
+      el.textContent = text;
+      el.className   = 'msg ' + (success ? 'success' : 'error');
+      el.style.display = 'block';
+    }
+    function friendlyError(e) {
+      var code = (e && (e.code || e.type)) || '';
+      if (code === 401 || String(code).indexOf('invalid_credentials') !== -1) return '⚠ Incorrect email or password.';
+      if (String(code).indexOf('user_already_exists') !== -1) return '⚠ An account with this email already exists.';
+      if (String(code).indexOf('password_recently_used') !== -1) return '⚠ Please choose a different password.';
+      return '⚠ ' + ((e && e.message) || 'Something went wrong. Please try again.');
+    }
+
+  } catch(e) {
+    // Config or SDK failed to load — show a friendly offline/config error
+    overlay.style.display = 'none';
+    var shield = document.getElementById('error-shield');
+    var detail = document.getElementById('err-detail');
+    if (detail) detail.textContent = 'Could not connect to the server. Please check your connection and try again.';
+    if (shield) shield.classList.add('show');
+  }
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>Profile — Huddle</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0f; --surface: #13131a; --card: #1a1a24; --border: #252535;
+      --accent: #6c63ff; --accent2: #a78bfa; --text: #eeeef5; --muted: #5c5c72;
+      --green: #34d399; --red: #f87171; --amber: #fbbf24; --tab-h: 60px;
+    }
+    html { touch-action: manipulation; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100dvh; display: flex; flex-direction: column;
+      padding-bottom: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px));
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: 0;
+      background: radial-gradient(ellipse 70% 35% at 50% -5%, rgba(108,99,255,0.1), transparent);
+      pointer-events: none;
+    }
+
+    /* ── Error shield ── */
+    #error-shield {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: var(--bg); flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 2rem; gap: 1rem;
+    }
+    #error-shield.show { display: flex; }
+    .err-icon  { font-size: 2.5rem; }
+    .err-title { font-size: 1.1rem; font-weight: 700; }
+    .err-msg   { font-size: 0.82rem; color: var(--muted); max-width: 280px; line-height: 1.6; }
+    .err-btn {
+      margin-top: 0.5rem; padding: 0 1.5rem; height: 48px;
+      background: var(--accent); color: #fff; border: none;
+      border-radius: 0.75rem; font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem; font-weight: 600; cursor: pointer;
+    }
+
+    /* ── Top bar ── */
+    .topbar {
+      position: sticky; top: 0; z-index: 10;
+      padding-top: env(safe-area-inset-top, 0px);
+      background: rgba(10,10,15,0.88); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    .topbar-inner { display: flex; align-items: center; height: 56px; padding: 0 1.25rem; }
+    .topbar-title { font-size: 1rem; font-weight: 700; letter-spacing: -0.02em; }
+
+    /* ── Main ── */
+    .main {
+      position: relative; z-index: 1; flex: 1;
+      padding: 1.75rem 1.25rem;
+      max-width: 680px; margin: 0 auto; width: 100%;
+    }
+
+    /* ── Avatar hero ── */
+    .profile-hero {
+      display: flex; flex-direction: column;
+      align-items: center; text-align: center;
+      padding: 0.5rem 0 2rem;
+      animation: fadeUp 0.3s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .avatar-ring {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; font-weight: 700; color: #fff;
+      margin-bottom: 1rem;
+      box-shadow: 0 0 40px rgba(108,99,255,0.25);
+    }
+    .profile-name  { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.02em; }
+    .profile-email { font-size: 0.85rem; color: var(--muted); margin-top: 0.25rem; }
+
+    /* ── Settings rows ── */
+    .section { margin-bottom: 1.5rem; animation: fadeUp 0.3s ease both; }
+    .section:nth-child(2) { animation-delay: 0.05s; }
+    .section:nth-child(3) { animation-delay: 0.10s; }
+    .section:nth-child(4) { animation-delay: 0.15s; }
+    .section-label {
+      font-size: 0.68rem; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      margin-bottom: 0.5rem; padding: 0 0.25rem;
+    }
+    .rows-card { background: var(--card); border: 1px solid var(--border); border-radius: 1rem; overflow: hidden; }
+    .row {
+      display: flex; align-items: center; gap: 0.85rem;
+      padding: 0.85rem 1rem; min-height: 52px;
+      border-bottom: 1px solid var(--border);
+      cursor: default; transition: background 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .row:last-child { border-bottom: none; }
+    .row.tappable { cursor: pointer; }
+    .row.tappable:active { background: var(--surface); }
+    .row-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; flex-shrink: 0;
+    }
+    .row-icon.purple { background: rgba(108,99,255,0.15); }
+    .row-icon.green  { background: rgba(52,211,153,0.12); }
+    .row-icon.amber  { background: rgba(251,191,36,0.12); }
+    .row-icon.gray   { background: rgba(255,255,255,0.06); }
+    .row-body { flex: 1; min-width: 0; }
+    .row-label { font-size: 0.9rem; font-weight: 500; }
+    .row-sub   { font-size: 0.75rem; color: var(--muted); margin-top: 0.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row-value { font-size: 0.8rem; color: var(--muted); flex-shrink: 0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+    .row-chevron { font-size: 0.75rem; color: var(--muted); flex-shrink: 0; margin-left: 0.25rem; }
+
+    /* ── Sign out ── */
+    .btn-signout {
+      width: 100%; min-height: 52px;
+      background: rgba(248,113,113,0.08); color: var(--red);
+      border: 1px solid rgba(248,113,113,0.25); border-radius: 0.85rem;
+      font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; margin-top: 0.5rem;
+    }
+    .btn-signout:active { transform: scale(0.98); }
+    /* armed state */
+    .btn-signout.armed {
+      background: var(--red); color: #fff; border-color: var(--red);
+    }
+
+    .app-version {
+      text-align: center; font-size: 0.72rem; color: var(--muted);
+      opacity: 0.5; margin-top: 1.5rem; padding-bottom: 0.5rem;
+    }
+
+    /* ── Bottom tab bar ── */
+    .tab-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+      height: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px));
+      background: rgba(13,13,20,0.95); backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border); display: flex;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .tab-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 0.25rem;
+      background: none; border: none; cursor: pointer; color: var(--muted);
+      font-family: 'DM Sans', sans-serif; font-size: 0.65rem; font-weight: 500;
+      transition: color 0.2s; min-height: var(--tab-h);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tab-item.active { color: var(--accent2); }
+    .tab-icon { font-size: 1.3rem; line-height: 1; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px) + 0.75rem);
+      left: 50%; transform: translateX(-50%) translateY(12px);
+      z-index: 100; background: var(--card); border: 1px solid var(--border);
+      border-radius: 0.65rem; padding: 0.65rem 1.1rem;
+      font-size: 0.85rem; font-weight: 500;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      max-width: 88vw; text-align: center; line-height: 1.45;
+      opacity: 0; transition: all 0.22s ease; pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.success { color: var(--green); border-color: rgba(52,211,153,0.3); }
+    .toast.error   { color: var(--red);   border-color: rgba(248,113,113,0.3); }
+    .toast.info    { color: var(--accent2); border-color: rgba(167,139,250,0.3); }
+
+    /* ── Loading skeleton ── */
+    @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:.8} }
+
+      .service-banner {
+          display: none;
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          z-index: 200;
+          padding: 0.65rem 1.1rem;
+          padding-top: calc(0.65rem + env(safe-area-inset-top, 0px));
+          background: rgba(251,191,36,0.12);
+          border-bottom: 1px solid rgba(251,191,36,0.3);
+          font-family: 'DM Sans', sans-serif;
+          font-size: 0.8rem;
+          color: #fbbf24;
+          text-align: center;
+          line-height: 1.4;
+      }
+
+          .service-banner.error {
+              background: rgba(248,113,113,0.1);
+              border-color: rgba(248,113,113,0.3);
+              color: #f87171;
+          }
+
+          .service-banner.show {
+              display: block;
+          }
+
+  </style>
+</head>
+<body>
+
+    <div class="service-banner" id="service-banner"></div>
+
+    <!-- Error shield -->
+    <div id="error-shield">
+        <div class="err-icon">😕</div>
+        <div class="err-title">Something went wrong</div>
+        <div class="err-msg" id="err-detail">An unexpected error occurred. Please try again.</div>
+        <button class="err-btn" onclick="window.location.reload()">Try Again</button>
+    </div>
+
+    <div class="topbar">
+        <div class="topbar-inner">
+            <span class="topbar-title">Profile</span>
+        </div>
+    </div>
+
+    <main class="main">
+        <div class="profile-hero">
+            <div class="avatar-ring" id="avatar-initials">…</div>
+            <div class="profile-name" id="profile-name">Loading…</div>
+            <div class="profile-email" id="profile-email"></div>
+        </div>
+
+        <div class="section">
+            <div class="section-label">Account</div>
+            <div class="rows-card">
+                <div class="row">
+                    <div class="row-icon purple">👤</div>
+                    <div class="row-body"><div class="row-label">Full Name</div></div>
+                    <div class="row-value" id="row-name">—</div>
+                </div>
+                <div class="row">
+                    <div class="row-icon purple">✉️</div>
+                    <div class="row-body"><div class="row-label">Email</div></div>
+                    <div class="row-value" id="row-email">—</div>
+                </div>
+                <div class="row">
+                    <div class="row-icon green">✅</div>
+                    <div class="row-body"><div class="row-label">Account status</div></div>
+                    <div class="row-value" id="row-status" style="color:var(--green)">—</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-label">App</div>
+            <div class="rows-card">
+                <div class="row tappable" onclick="window.location.href='dashboard.html'">
+                    <div class="row-icon purple">🏠</div>
+                    <div class="row-body">
+                        <div class="row-label">My Rooms</div>
+                        <div class="row-sub">View and manage your video rooms</div>
+                    </div>
+                    <div class="row-chevron">›</div>
+                </div>
+                <div class="row tappable" id="share-row">
+                    <div class="row-icon amber">🔗</div>
+                    <div class="row-body">
+                        <div class="row-label">Share Huddle</div>
+                        <div class="row-sub">Invite someone to join a call</div>
+                    </div>
+                    <div class="row-chevron">›</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-label">Support</div>
+            <div class="rows-card">
+                <div class="row tappable" id="about-row" onclick="window.location.href='about.html'">
+                    <div class="row-icon gray">ℹ️</div>
+                    <div class="row-body">
+                        <div class="row-label">About Huddle</div>
+                        <div class="row-sub">Powered by Daily.co + Appwrite</div>
+                    </div>
+                    <div class="row-chevron">›</div>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-signout" id="signout-btn">Sign Out</button>
+        <div class="app-version">Huddle v1.0</div>
+    </main>
+
+    <div class="tab-bar">
+        <button class="tab-item" onclick="window.location.href='dashboard.html'">
+            <span class="tab-icon">🏠</span><span>Rooms</span>
+        </button>
+        <button class="tab-item" onclick="window.location.href='dashboard.html'">
+            <span class="tab-icon">＋</span><span>New Room</span>
+        </button>
+        <button class="tab-item active">
+            <span class="tab-icon">👤</span><span>Profile</span>
+        </button>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <!-- ── Error shield (plain, runs first) ── -->
+    <script>
+        (function () {
+            function showError(msg) {
+                var s = document.getElementById('error-shield');
+                var d = document.getElementById('err-detail');
+                if (d && msg) d.textContent = msg;
+                if (s) s.classList.add('show');
+            }
+            window.onerror = function (msg, src) {
+                if (src && (src.indexOf('fonts.googleapis') !== -1 || src.indexOf('jsdelivr') !== -1)) return false;
+                showError('An unexpected error occurred. Please try again.');
+                return true;
+            };
+            window.addEventListener('unhandledrejection', function (e) {
+                var msg = e && e.reason && e.reason.message ? e.reason.message : '';
+                if (msg.indexOf('401') !== -1 || msg.toLowerCase().indexOf('unauthorized') !== -1 ||
+                    msg.toLowerCase().indexOf('missing scope') !== -1) return;
+                if (msg.toLowerCase().indexOf('network') !== -1 || msg.toLowerCase().indexOf('fetch') !== -1) {
+                    showError('No internet connection. Please check your network and try again.');
+                }
+            });
+            // Android back — go to dashboard
+            window.handleAndroidBack = function () {
+                window.location.href = 'dashboard.html';
+            };
+        })();
+    </script>
+
+    <!-- ── Toast helper (plain, shared by all handlers below) ── -->
+    <script>
+        var _toastTimer;
+        function showToast(msg, type) {
+            clearTimeout(_toastTimer);
+            var t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast ' + (type || 'success') + ' show';
+            _toastTimer = setTimeout(function () { t.classList.remove('show'); }, type === 'info' ? 5000 : 3000);
+        }
+    </script>
+
+    <!-- ── Profile app logic (module, isolated) ── -->
+    <script type="module">
+        (async function () {
+            try {
+                var mod = await import('./Scripts/config.js');
+                var APPWRITE = mod.APPWRITE;
+                var sdk = await import('https://cdn.jsdelivr.net/npm/appwrite@16/dist/esm/sdk.js');
+                var client = new sdk.Client().setEndpoint(APPWRITE.endpoint).setProject(APPWRITE.projectId);
+                var account = new sdk.Account(client);
+
+                var currentUser;
+                try {
+                    currentUser = await account.get();
+                } catch (_) {
+                    window.location.href = 'auth.html'; return;
+                }
+
+                var name = currentUser.name || '';
+                var email = currentUser.email || '';
+                var initials = (name || email).split(' ').map(function (p) { return p[0]; }).join('').slice(0, 2).toUpperCase() || '?';
+
+                document.getElementById('avatar-initials').textContent = initials;
+                document.getElementById('profile-name').textContent = name || email;
+                document.getElementById('profile-email').textContent = name ? email : '';
+                document.getElementById('row-name').textContent = name || '—';
+                document.getElementById('row-email').textContent = email;
+                document.getElementById('row-status').textContent = currentUser.emailVerification ? 'Verified' : 'Active';
+
+                // ── Sign out (two-tap) ──
+                var signoutBtn = document.getElementById('signout-btn');
+                var signoutReset;
+                signoutBtn.addEventListener('click', function () {
+                    if (signoutBtn.classList.contains('armed')) {
+                        clearTimeout(signoutReset);
+                        account.deleteSession('current').then(function () {
+                            window.location.href = 'auth.html';
+                        }).catch(function (e) {
+                            showToast('Sign out failed: ' + e.message, 'error');
+                        });
+                    } else {
+                        signoutBtn.classList.add('armed');
+                        signoutBtn.textContent = 'Tap again to confirm sign out';
+                        signoutReset = setTimeout(function () {
+                            signoutBtn.classList.remove('armed');
+                            signoutBtn.textContent = 'Sign Out';
+                        }, 3000);
+                    }
+                });
+
+                // ── Share ──
+                document.getElementById('share-row').addEventListener('click', function () {
+                    var url = window.location.origin + '/index.html';
+                    navigator.clipboard.writeText(url).then(function () {
+                        showToast('✓ Link copied to clipboard!', 'success');
+                    }).catch(function () {
+                        showToast('Could not copy — try manually.', 'error');
+                    });
+                });
+
+                // ── About ──
+                window.showAbout = function () {
+                    window.location.href = 'about.html';
+                };
+
+            } catch (e) {
+                var shield = document.getElementById('error-shield');
+                var detail = document.getElementById('err-detail');
+                if (detail) detail.textContent = 'Could not connect to the server. Please check your connection.';
+                if (shield) shield.classList.add('show');
+            }
+        })();
+    </script>
+
+</body>
+</html>
