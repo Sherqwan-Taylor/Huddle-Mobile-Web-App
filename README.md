@@ -38,7 +38,5 @@ These keys will go inside the config file that is located in:
 
 Resources\\Raw\\wwwroot\\Scripts
 
-This is a small hobby project that I have been working on using AI assistance while currently in college to showcase on my portfolio, this is a simple mobile web video calling app that uses Appwrite as a backend and Daily.co for it's video calling. It's my first time making a mobile app, so it's a bit rough, but I think I did OK with it, though I will try to add more to it as I go along and learn more.
-
 You can download and try it live here:
 https://tdr-app-download.appwrite.network
